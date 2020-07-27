@@ -1,6 +1,3 @@
-var board = null;
-var game = new Chess();
-
 Array.prototype.shuffle = function() {
   for (var i = 0; i < this.length; i++) {
     var j = Math.floor(Math.random() * (i + 1));
@@ -11,30 +8,42 @@ Array.prototype.shuffle = function() {
 }
 
 function bestMove(depth) {
-  var [move, _] = miniMax('b', 'w', depth)
+  var [move, _] = miniMax('b', 'w', depth, -Infinity, Infinity)
   return move;
 }
 
-function miniMax(player, opponent, depth) {
+function miniMax(player, opponent, depth, alpha, beta) {
   var best = [null, null];
   var moves = game.moves().shuffle();
   if (depth == 0 || moves.length == 0) {
-    var score = evaluateGame(player);
+    var score = evaluateGame('b');
     return [null, score];
   }
 
   for (var m of moves) {
     game.move(m);
-    var [_, score] = miniMax(opponent, player, depth - 1);
+    var [_, score] = miniMax(opponent, player, depth - 1, alpha, beta);
     game.undo();
 
     if (best[1] == null) {
       best = [m, score];
     }
 
-    if (-score > best[1]) {
-      best = [m, -score];
+    if (player == 'b') {
+      if (score > best[1]) {
+        best = [m, score];
+      }
+
+      alpha = Math.max(alpha, score);
+    } else {
+      if (score < best[1]) {
+        best = [m, score];
+      }
+
+      beta = Math.min(beta, score);
     }
+
+    if (alpha >= beta) break;
   }
 
   return best;
@@ -42,12 +51,12 @@ function miniMax(player, opponent, depth) {
 
 function evaluateGame(player) {
   var pieceValue = {
-    'p': 1,
-    'n': 10,
-    'b': 10,
-    'r': 100,
-    'q': 10000,
-    'k': 100000,
+    'p': 100,
+    'n': 350,
+    'b': 350,
+    'r': 525,
+    'q': 1000,
+    'k': 10000,
   }
   var value = 0;
   game.board().forEach(function(row) {
@@ -60,40 +69,3 @@ function evaluateGame(player) {
 
   return value;
 }
-
-function makeComputerMove() {
-  var move = bestMove(2);
-  game.move(move);
-  board.position(game.fen());
-}
-
-function onDragStart(source, piece, position, orientation) {
-  if (game.game_over()) return false;
-
-  if (piece.search(/^b/) !== -1) return false;
-}
-
-function onDrop(source, target) {
-  var move = game.move({
-    from: source,
-    to: target
-  });
-
-  if (move == null) return 'snapback';
-
-  window.setTimeout(makeComputerMove, 250);
-}
-
-function onSnapEnd() {
-  board.position(game.fen());
-}
-
-var config = {
-  draggable: true,
-  position: 'start',
-  onDragStart: onDragStart,
-  onDrop: onDrop,
-  onSnapEnd: onSnapEnd,
-};
-
-board = Chessboard('my_board', config);
