@@ -1,12 +1,19 @@
 var board = null;
 var game = new Chess();
 
-var DEPTH = 3;
+var curtain = document.getElementById('curtain');
 
 function makeComputerMove() {
-  var move = bestMove(DEPTH);
-  game.move(move);
-  board.position(game.fen());
+  curtain.style.display = 'block';
+  var worker = new Worker('js/worker.js');
+  worker.addEventListener('message', function(e) {
+    var move = e.data;
+    game.move(move);
+    board.position(game.fen());
+    worker.terminate();
+    curtain.style.display = 'none';
+  });
+  worker.postMessage(game.fen());
 }
 
 function onDragStart(source, piece, position, orientation) {
@@ -18,7 +25,8 @@ function onDragStart(source, piece, position, orientation) {
 function onDrop(source, target) {
   var move = game.move({
     from: source,
-    to: target
+    to: target,
+    promotion: 'q',
   });
 
   if (move == null) return 'snapback';

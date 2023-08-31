@@ -8,11 +8,14 @@ Array.prototype.shuffle = function() {
 }
 
 function bestMove(depth) {
-  var [move, _] = miniMax('b', 'w', depth, -Infinity, Infinity)
+  turns_so_far = 0;
+  debug = 0;
+  var [move, _] = miniMax('b', 'w', depth, -Infinity, Infinity);
   return move;
 }
 
 function miniMax(player, opponent, depth, alpha, beta) {
+  debug = Math.max(debug, depth);
   var best = [null, null];
   var moves = game.moves().shuffle();
   if (depth == 0 || moves.length == 0) {
